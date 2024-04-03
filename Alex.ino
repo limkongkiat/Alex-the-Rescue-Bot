@@ -53,6 +53,11 @@ unsigned long newDist;
 unsigned long deltaTicks;
 unsigned long targetTicks;
 
+// Ultrasound Pins
+int TRIG_PIN = 50;
+int ECHO_PIN = 48;
+float SPEED_OF_SOUND = 0.0345;
+
 unsigned long computeDeltaTicks (float ang){
   unsigned long ticks = (unsigned long)((ang * alexCirc * COUNTS_PER_REV)/(360.0 * WHEEL_CIRC));
   return ticks;
