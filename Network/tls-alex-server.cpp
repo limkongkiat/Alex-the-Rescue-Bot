@@ -72,6 +72,7 @@ void handleStatus(TPacket *packet)
 	char data[65];
 	printf("UART STATUS PACKET\n");
 	data[0] = NET_STATUS_PACKET;
+	printf("red: %d", packet->params[10]); //testing to see if can read Tpacket
 	memcpy(&data[1], packet->params, sizeof(packet->params));
 	sendNetworkData(data, sizeof(data));
 }
