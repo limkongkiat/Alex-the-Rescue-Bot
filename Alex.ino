@@ -477,6 +477,12 @@ void waitForHello()
   } // !exit
 }
 
+void setupUltra() {
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  digitalWrite(TRIG_PIN, LOW);
+}
+
 void setup() {
   // put your setup code here, to run once:
   alexDiagonal = sqrt((ALEX_LENGTH * ALEX_LENGTH) + (ALEX_BREADTH * ALEX_BREADTH));
@@ -489,6 +495,7 @@ void setup() {
   startSerial();
   enablePullups();
   initializeState();
+  setupUltra();
   sei();
 }
 
