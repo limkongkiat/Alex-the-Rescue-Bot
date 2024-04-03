@@ -488,6 +488,15 @@ void setupUltra() {
   digitalWrite(TRIG_PIN, LOW);
 }
 
+float getDistance() {
+  digitalWrite(TRIG_PIN, HIGH );
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN , LOW);
+  unsigned long microsecs = pulseIn(ECHO_PIN, HIGH);
+  float cms = microsecs*SPEED_OF_SOUND/2;
+  return cms
+}
+
 void setup() {
   // put your setup code here, to run once:
   alexDiagonal = sqrt((ALEX_LENGTH * ALEX_LENGTH) + (ALEX_BREADTH * ALEX_BREADTH));
@@ -555,7 +564,8 @@ void loop() {
  { 
   if(dir==FORWARD) 
   { 
-   if(forwardDist > newDist) 
+    wallDist = getDistance()
+   if(forwardDist > newDist || wallDist > 5) 
    { 
     deltaDist=0; 
     newDist=0; 
