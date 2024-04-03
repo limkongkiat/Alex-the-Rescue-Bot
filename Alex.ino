@@ -432,6 +432,9 @@ void handleCommand(TPacket *command)
         sendOK();
         clearOneCounter(command->params[0]);
       break;
+    case COMMAND_COLOR_SENSOR:
+        sendOK();
+        //PLACEHOLDER FOR COLOR SENSOR FUNCTION
     default:
       sendBadCommand();
   }
