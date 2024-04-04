@@ -72,7 +72,10 @@ void handleStatus(TPacket *packet)
 	char data[65];
 	printf("UART STATUS PACKET\n");
 	data[0] = NET_STATUS_PACKET;
-	printf("red: %d", packet->params[10]); //testing to see if can read Tpacket
+	//printf("red: %d\n", packet->params[10]);
+	if (packet->params[10] < 200) {
+		playAudio("autobots-3.pcm");
+	}
 	memcpy(&data[1], packet->params, sizeof(packet->params));
 	sendNetworkData(data, sizeof(data));
 }
@@ -273,13 +276,13 @@ void handleCommand(void *conn, const char *buffer)
 			commandPacket.command = COMMAND_GET_STATS;
 			uartSendPacket(&commandPacket);
 			break;
-
+			
 		case 'x':
 		case 'X':
 			commandPacket.command = COMMAND_COLOR_SENSOR;
 			uartSendPacket(&commandPacket);
 			break;
-		
+
 		default:
 			printf("Bad command\n");
 
