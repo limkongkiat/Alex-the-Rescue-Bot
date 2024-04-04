@@ -5,10 +5,11 @@
 #define sensorOut A8
  
 // Variables for Color Pulse Width Measurements
- 
-int redPW = 0;
-int greenPW = 0;
-int bluePW = 0;
+
+double white = 0;
+double red = 0;
+double green = 0;
+double blue = 0;
  
 void setup() {
  
@@ -31,7 +32,7 @@ void setup() {
 
 void identifyColour(int Red, int Green, int Blue)
 {
-  if (Red < 100)
+  if (Red < 100) //see what values it gives, not sure about this
   {
     Serial.println("Red");
   } else {
@@ -40,76 +41,38 @@ void identifyColour(int Red, int Green, int Blue)
 }
  
 void loop() {
-  
+ //read white values 
+ //clear filter
+ digitalWrite(S2,HIGH);
+ digitalWrite(S3,LOW);
+ white = (double)pulseIn(sensorOut,LOW);
+ delay(20);
+ 
   // Read Red Pulse Width
-  redPW = getRedPW();
-  // Delay to stabilize sensor
-  delay(200);
-  
-  // Read Green Pulse Width
-  greenPW = getGreenPW();
-  // Delay to stabilize sensor
-  delay(200);
-  
-  // Read Blue Pulse Width
-  bluePW = getBluePW();
-  // Delay to stabilize sensor
-  delay(200);
-
-  Serial.print(redPW);
-  Serial.print(greenPW);
-  Serial.print(bluePW);
-  
-  // Print output to Serial Monitor
-identifyColour(redPW, greenPW, bluePW);
-  
-}
- 
- 
-// Function to read Red Pulse Widths
-int getRedPW() {
- 
-  // Set sensor to read Red only
   digitalWrite(S2,LOW);
   digitalWrite(S3,LOW);
-  //PORTB = 0b00000100;
-  // Define integer to represent Pulse Width
-  int PW;
-  // Read the output Pulse Width
-  PW = pulseIn(sensorOut, LOW);
-  // Return the value
-  return PW;
- 
-}
- 
-// Function to read Green Pulse Widths
-int getGreenPW() {
- 
-  // Set sensor to read Green only
+  red = (white/(double)pulseIn(sensorOut,LOW));
+  // Delay to stabilize sensor
+  delay(20);
+  
+  // Read Green Pulse Width
   digitalWrite(S2,HIGH);
   digitalWrite(S3,HIGH);
-  //PORTB = 0b00110100;
-  // Define integer to represent Pulse Width
-  int PW;
-  // Read the output Pulse Width
-  PW = pulseIn(sensorOut, LOW);
-  // Return the value
-  return PW;
- 
-}
- 
-// Function to read Blue Pulse Widths
-int getBluePW() {
- 
-  // Set sensor to read Blue only
+  greenPW = (white/(double)pulseIn(sensorOut,LOW));
+  // Delay to stabilize sensor
+  delay(20);
+  
+  // Read Blue Pulse Width
   digitalWrite(S2,LOW);
   digitalWrite(S3,HIGH);
-  //PORTB = 0b00100100;
-  // Define integer to represent Pulse Width
-  int PW;
-  // Read the output Pulse Width
-  PW = pulseIn(sensorOut, LOW);
-  // Return the value
-  return PW;
- 
+  bluePW = (white/(double)pulseIn(sensorOut,LOW));
+  // Delay to stabilize sensor
+  delay(20);
+
+  Serial.print(red);
+  Serial.print(green);
+  Serial.print(blue);
+  
+  // Print output to Serial Monitor
+identifyColour(red, green, blue);
 }
