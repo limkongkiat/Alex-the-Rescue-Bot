@@ -43,22 +43,5 @@ typedef enum
   COMMAND_CLEAR_STATS = 6,
   COMMAND_COLOR_SENSOR = 7
 } TCommandType;
-
-typedef enum
-{
-  FORWARD = 1,
-  BACKWARD = 2,
-  LEFT = 3,
-  RIGHT = 4
-} TDirection;
-
-typedef enum Tdir
-{
-  STOP,
-  GO,
-  BACK,
-  CCW,
-  CW
-} Tdir;
-
 #endif
+
