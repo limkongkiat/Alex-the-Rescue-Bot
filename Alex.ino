@@ -24,6 +24,14 @@
 #define PI 3.141592654
 float alexDiagonal = 0.0;
 float alexCirc = 0.0;
+
+//Colour Sensor
+#define S0 22
+#define S1 23
+#define S2 24
+#define S3 25
+#define sensorOut A8
+
 /*
  *    Alex's State Variables
  */
@@ -52,6 +60,11 @@ unsigned long newDist;
 
 unsigned long deltaTicks;
 unsigned long targetTicks;
+
+//colour sensor data
+unsigned long red = 0;
+unsigned long green = 0;
+unsigned long blue = 0;
 
 // Ultrasound Pins
 int TRIG_PIN = 50;
@@ -121,9 +134,10 @@ void sendStatus()
   TPacket statusPacket;
   statusPacket.packetType = PACKET_TYPE_RESPONSE;
   statusPacket.command = RESP_STATUS;
-  uint32_t inputParams[10] = {leftForwardTicks,rightForwardTicks,leftReverseTicks,rightReverseTicks,
-  leftForwardTicksTurns,rightForwardTicksTurns,leftReverseTicksTurns,rightReverseTicksTurns,forwardDist,reverseDist};
-  for (int i =0; i < 10; i++){
+  uint32_t inputParams[13] = {leftForwardTicks,rightForwardTicks,leftReverseTicks,rightReverseTicks,
+  leftForwardTicksTurns,rightForwardTicksTurns,leftReverseTicksTurns,rightReverseTicksTurns,forwardDist,reverseDist,
+  red, green, blue};
+  for (int i = 0; i < 13; i++){
     statusPacket.params[i] = inputParams[i];
   }
   sendResponse(&statusPacket);
@@ -359,6 +373,11 @@ void clearCounters()
   reverseDist=0; 
 }
 
+void clearColorCounters(){
+  red = 0;
+  green = 0;
+  blue = 0;
+}
 // Clears one particular counter
 void clearOneCounter(int which)
 {
@@ -431,6 +450,7 @@ void handleCommand(TPacket *command)
         stop();
       break;        
     case COMMAND_GET_STATS:
+        clearColorCounters();
         sendStatus();
       break;
     case COMMAND_CLEAR_STATS:
@@ -439,7 +459,9 @@ void handleCommand(TPacket *command)
       break;
     case COMMAND_COLOR_SENSOR:
         sendOK();
-        //PLACEHOLDER FOR COLOR SENSOR FUNCTION
+        readColour();
+        sendStatus();
+      break;
     default:
       sendBadCommand();
   }
@@ -482,19 +504,103 @@ void waitForHello()
   } // !exit
 }
 
+void setupCSensor() {
+ 
+  // Set S0 - S3 as outputs
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+  
+  // Set Sensor output as input
+  pinMode(sensorOut, INPUT);
+  
+  // Set Pulse Width scaling to 20%
+  digitalWrite(S0,HIGH);
+  digitalWrite(S1,LOW);
+}
+ 
+// Function to read Red Pulse Widths
+unsigned long getRedPW() {
+ 
+  // Set sensor to read Red only
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,LOW);
+  //PORTB = 0b00000100;
+  // Define integer to represent Pulse Width
+  unsigned long PW;
+  // Read the output Pulse Width
+  PW = pulseIn(sensorOut, LOW);
+  // Return the value
+  return PW;
+ 
+}
+ 
+// Function to read Green Pulse Widths
+unsigned long getGreenPW() {
+ 
+  // Set sensor to read Green only
+  digitalWrite(S2,HIGH);
+  digitalWrite(S3,HIGH);
+  //PORTB = 0b00110100;
+  // Define integer to represent Pulse Width
+  unsigned long PW;
+  // Read the output Pulse Width
+  PW = pulseIn(sensorOut, LOW);
+  // Return the value
+  return PW;
+ 
+}
+ 
+// Function to read Blue Pulse Widths
+unsigned long getBluePW() {
+ 
+  // Set sensor to read Blue only
+  digitalWrite(S2,LOW);
+  digitalWrite(S3,HIGH);
+  //PORTB = 0b00100100;
+  // Define integer to represent Pulse Width
+  unsigned long PW;
+  // Read the output Pulse Width
+  PW = pulseIn(sensorOut, LOW);
+  // Return the value
+  return PW;
+}
+
+void readColour() {
+  // Read Red Pulse Width
+  red = getRedPW();
+  dbprintf("Red: %ld\n",red);
+  // Delay to stabilize sensor
+  delay(200);
+  
+  // Read Green Pulse Width
+  green = getGreenPW();
+  dbprintf("Green: %ld\n",green);
+  // Delay to stabilize sensor
+  delay(200);
+  
+  // Read Blue Pulse Width
+  blue = getBluePW();
+  dbprintf("Blue: %ld\n",blue);
+  // Delay to stabilize sensor
+  delay(200);
+}
+
 void setupUltra() {
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
   digitalWrite(TRIG_PIN, LOW);
 }
 
-float getDistance() {
-  digitalWrite(TRIG_PIN, HIGH );
+int getDistance() {
+  digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN , LOW);
   unsigned long microsecs = pulseIn(ECHO_PIN, HIGH);
-  float cms = microsecs*SPEED_OF_SOUND/2;
-  return cms
+  int cms = microsecs * SPEED_OF_SOUND/2;
+  dbprintf("Distance: %d\n", cms);
+  return cms;
 }
 
 void setup() {
@@ -509,6 +615,7 @@ void setup() {
   startSerial();
   enablePullups();
   initializeState();
+  setupCSensor();
   setupUltra();
   sei();
 }
@@ -550,13 +657,11 @@ void loop() {
   
   if(result == PACKET_OK)
     handlePacket(&recvPacket);
-  else
-    if(result == PACKET_BAD)
+  else if(result == PACKET_BAD)
     {
       sendBadPacket();
     }
-    else
-      if(result == PACKET_CHECKSUM_BAD)
+    else if(result == PACKET_CHECKSUM_BAD)
       {
         sendBadChecksum();
       } 
@@ -564,11 +669,11 @@ void loop() {
  { 
   if(dir==FORWARD) 
   { 
-    wallDist = getDistance()
-   if(forwardDist > newDist || wallDist > 5) 
+   float wallDist = getDistance();
+   if(forwardDist > newDist || (wallDist != 0 && wallDist < 5)) 
    { 
     deltaDist=0; 
-    newDist=0; 
+    newDist=0;
     stop(); 
    } 
   } 
