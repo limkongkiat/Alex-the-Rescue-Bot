@@ -70,13 +70,15 @@ void handleMessage(TPacket *packet)
 void handleStatus(TPacket *packet)
 {
 	char data[65];
+	//for (auto i: packet->params) {printf("%ld,",i);}
 	printf("UART STATUS PACKET\n");
 	data[0] = NET_STATUS_PACKET;
-	//printf("red: %d\n", packet->params[10]);
-	if (packet->params[10] < 200) {
-		playAudio("autobots-3.pcm");
-	}
+	// printf("red: %d\n", packet->params[10]);
+	// if (packet->params[10] < 200) {
+	// 	playAudio("autobots-3.pcm");
+	// }
 	memcpy(&data[1], packet->params, sizeof(packet->params));
+	//for (auto i: data) {printf("%d,",i);}
 	sendNetworkData(data, sizeof(data));
 }
 
@@ -204,7 +206,7 @@ void sendNetworkData(const char *data, int len)
             /* TODO: Implement SSL write here to write data to the network. Note that
               handleNetworkData should already have set tls_conn to point to the TLS
               connection we want to write to. */
-			  c = sslWrite(tls_conn, data, sizeof(data));
+			  c = sslWrite(tls_conn, data, len);
             /* END TODO */
 
         }
