@@ -597,9 +597,9 @@ int getDistance() {
   digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN , LOW);
-  unsigned long microsecs = pulseIn(ECHO_PIN, HIGH);
+  unsigned long microsecs = pulseIn(ECHO_PIN, HIGH, 3000);
   int cms = microsecs * SPEED_OF_SOUND/2;
-  dbprintf("Distance: %d\n", cms);
+  //dbprintf("Distance: %d\n", cms);
   return cms;
 }
 
@@ -670,8 +670,9 @@ void loop() {
   if(dir==FORWARD) 
   { 
    float wallDist = getDistance();
-   if(forwardDist > newDist || (wallDist != 0 && wallDist < 5)) 
+   if(forwardDist > newDist || (wallDist != 0 && wallDist < 10)) 
    { 
+    dbprintf("Distance: %d\n", wallDist);
     deltaDist=0; 
     newDist=0;
     stop(); 
