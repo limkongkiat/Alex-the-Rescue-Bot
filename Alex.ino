@@ -77,12 +77,14 @@ unsigned long computeDeltaTicks (float ang){
 }
 
 void left(float ang, float speed){
+  //dbprintf("%d, %d\n", (int)ang, (int)speed);
   if (ang == 0)
     deltaTicks = 99999999;
   else
     deltaTicks = computeDeltaTicks(ang);
 
-  targetTicks = leftReverseTicksTurns + deltaTicks;
+  targetTicks = rightForwardTicksTurns + deltaTicks;
+  //dbprintf("%d\n",targetTicks);
   ccw(ang, speed);
 }
 void right(float ang, float speed){
@@ -92,6 +94,7 @@ void right(float ang, float speed){
     deltaTicks = computeDeltaTicks(ang);
 
   targetTicks = rightReverseTicksTurns + deltaTicks;
+  //dbprintf("%d\n",targetTicks);
   cw(ang, speed);
 }
 volatile TDirection dir;
@@ -242,10 +245,10 @@ void leftISR()
 {
   if (dir == FORWARD){
     leftForwardTicks++; 
-    forwardDist = (unsigned long) ((float) leftForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
+    forwardDist = (unsigned long) ((float) rightForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
   } else if (dir == BACKWARD){
     leftReverseTicks++;
-    reverseDist = (unsigned long) ((float) leftReverseTicks / COUNTS_PER_REV * WHEEL_CIRC);
+    reverseDist = (unsigned long) ((float) rightReverseTicks / COUNTS_PER_REV * WHEEL_CIRC);
   } else if (dir == LEFT){
     leftReverseTicksTurns++;
   } else if (dir == RIGHT){
@@ -567,25 +570,65 @@ unsigned long getBluePW() {
   return PW;
 }
 
+void identifyColour(int Red, int Green, int Blue) 
+{ 
+  if (Red < 70 && Blue < 80 && Green < 90) //see what values it gives, not sure about this 
+  { 
+    dbprintf("White\n"); 
+  } else if(Red > 50){ 
+    if(Red > 80 && Green < 190){ 
+      dbprintf("Green\n");
+    } 
+    else if(Red <70)  
+    { 
+      dbprintf("Red\n"); 
+    } else {
+      dbprintf("Unknown\n");
+    }
+  } else { 
+    dbprintf("Unknown\n");
+  } 
+} 
+
 void readColour() {
-  // Read Red Pulse Width
-  red = getRedPW();
-  dbprintf("Red: %ld\n",red);
-  // Delay to stabilize sensor
-  delay(200);
+ digitalWrite(S2,HIGH); 
+ digitalWrite(S3,LOW); 
+ //white = (double)pulseIn(sensorOut,LOW); 
+ delay(20); 
   
-  // Read Green Pulse Width
-  green = getGreenPW();
-  dbprintf("Green: %ld\n",green);
-  // Delay to stabilize sensor
-  delay(200);
-  
-  // Read Blue Pulse Width
-  blue = getBluePW();
-  dbprintf("Blue: %ld\n",blue);
-  // Delay to stabilize sensor
-  delay(200);
-}
+  // Read Red Pulse Width 
+  digitalWrite(S2,LOW); 
+  digitalWrite(S3,LOW); 
+  red = (double)pulseIn(sensorOut,LOW); 
+  // Delay to stabilize sensor 
+  delay(20); 
+   
+  // Read Green Pulse Width 
+  digitalWrite(S2,HIGH); 
+  digitalWrite(S3,HIGH); 
+  green = (double)pulseIn(sensorOut,LOW); 
+  // Delay to stabilize sensor 
+  delay(20); 
+   
+  // Read Blue Pulse Width 
+  digitalWrite(S2,LOW); 
+  digitalWrite(S3,HIGH); 
+  blue = (double)pulseIn(sensorOut,LOW); 
+  // Delay to stabilize sensor 
+  delay(20); 
+ 
+  // Serial.print(red); 
+  // Serial.print(" "); 
+  // Serial.print(green); 
+  // Serial.print(" "); 
+  // Serial.print(blue); 
+   
+  // Print output to Serial Monitor 
+  identifyColour(red, green, blue); 
+  delay(500);
+} 
+
+
 
 void setupUltra() {
   pinMode(TRIG_PIN, OUTPUT);
@@ -593,12 +636,12 @@ void setupUltra() {
   digitalWrite(TRIG_PIN, LOW);
 }
 
-int getDistance() {
+float getDistance() {
   digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN , LOW);
   unsigned long microsecs = pulseIn(ECHO_PIN, HIGH, 3000);
-  int cms = microsecs * SPEED_OF_SOUND/2;
+  float cms = microsecs * SPEED_OF_SOUND/2;
   //dbprintf("Distance: %d\n", cms);
   return cms;
 }
@@ -669,10 +712,11 @@ void loop() {
  { 
   if(dir==FORWARD) 
   { 
-   float wallDist = getDistance();
-   if(forwardDist > newDist || (wallDist != 0 && wallDist < 10)) 
+   double wallDist = getDistance();
+   dbprintf("Distance: %d\n", (int)wallDist);
+   if(forwardDist > newDist || (wallDist != 0 && wallDist <= 10)) 
    { 
-    dbprintf("Distance: %d\n", wallDist);
+    
     deltaDist=0; 
     newDist=0;
     stop(); 
@@ -700,7 +744,7 @@ void loop() {
 
  if (deltaTicks > 0){
   if (dir == LEFT){
-    if (leftReverseTicksTurns >= targetTicks){
+    if (rightForwardTicksTurns >= targetTicks){
       deltaTicks = 0;
       targetTicks = 0;
       stop();

@@ -14,10 +14,10 @@ AF_DCMotor motorBR(BACK_RIGHT);
 void move(float speed, int direction)
 {
   int speed_scaled = (speed/100.0) * 255;
-  motorFL.setSpeed(speed_scaled);
-  motorFR.setSpeed(speed_scaled);
+  motorFL.setSpeed(speed_scaled/2);
+  motorFR.setSpeed(speed_scaled/2);
   motorBL.setSpeed(speed_scaled);
-  motorBR.setSpeed(speed_scaled);
+  motorBR.setSpeed(speed_scaled/2);
 
   switch(direction)
     {
