@@ -60,15 +60,20 @@ unsigned long newDist;
 
 unsigned long deltaTicks;
 unsigned long targetTicks;
+float currAng;
+float targetAng;
 
 //colour sensor data
 unsigned long red = 0;
 unsigned long green = 0;
 unsigned long blue = 0;
+char colour = 'U';
 
 // Ultrasound Pins
 int TRIG_PIN = 50;
+int BACK_TRIG = 51;
 int ECHO_PIN = 48;
+int BACK_ECHO = 49;
 float SPEED_OF_SOUND = 0.0345;
 
 unsigned long computeDeltaTicks (float ang){
@@ -78,23 +83,29 @@ unsigned long computeDeltaTicks (float ang){
 
 void left(float ang, float speed){
   //dbprintf("%d, %d\n", (int)ang, (int)speed);
-  if (ang == 0)
+  /*if (ang == 0){
     deltaTicks = 99999999;
-  else
-    deltaTicks = computeDeltaTicks(ang);
+  } else {*/
+    currAng = check_angle();
+    targetAng = currAng + ang;
+  //}
+    //deltaTicks = computeDeltaTicks(ang);
 
-  targetTicks = rightForwardTicksTurns + deltaTicks;
+  //targetTicks = rightForwardTicksTurns + deltaTicks;
   //dbprintf("%d\n",targetTicks);
+  deltaTicks = 1;
   ccw(ang, speed);
 }
 void right(float ang, float speed){
-  if (ang == 0)
+  /*if (ang == 0){
     deltaTicks = 99999999;
-  else
-    deltaTicks = computeDeltaTicks(ang);
-
-  targetTicks = rightReverseTicksTurns + deltaTicks;
+  } else {*/
+    currAng = check_angle();
+    targetAng = currAng - ang;
+  //}
+  //targetTicks = rightReverseTicksTurns + deltaTicks;
   //dbprintf("%d\n",targetTicks);
+  deltaTicks = 1;
   cw(ang, speed);
 }
 volatile TDirection dir;
@@ -137,10 +148,10 @@ void sendStatus()
   TPacket statusPacket;
   statusPacket.packetType = PACKET_TYPE_RESPONSE;
   statusPacket.command = RESP_STATUS;
-  uint32_t inputParams[13] = {leftForwardTicks,rightForwardTicks,leftReverseTicks,rightReverseTicks,
+  uint32_t inputParams[14] = {leftForwardTicks,rightForwardTicks,leftReverseTicks,rightReverseTicks,
   leftForwardTicksTurns,rightForwardTicksTurns,leftReverseTicksTurns,rightReverseTicksTurns,forwardDist,reverseDist,
-  red, green, blue};
-  for (int i = 0; i < 13; i++){
+  red, green, blue, (uint32_t)colour};
+  for (int i = 0; i < 14; i++){
     statusPacket.params[i] = inputParams[i];
   }
   sendResponse(&statusPacket);
@@ -380,6 +391,7 @@ void clearColorCounters(){
   red = 0;
   green = 0;
   blue = 0;
+  colour = 'U';
 }
 // Clears one particular counter
 void clearOneCounter(int which)
@@ -531,11 +543,15 @@ unsigned long getRedPW() {
   digitalWrite(S3,LOW);
   //PORTB = 0b00000100;
   // Define integer to represent Pulse Width
-  unsigned long PW;
+  unsigned long PW = 0;
   // Read the output Pulse Width
-  PW = pulseIn(sensorOut, LOW);
+  for (int i = 0; i < 5; i++){
+    PW += pulseIn(sensorOut, LOW);
+    delay(20);
+  }
+  
   // Return the value
-  return PW;
+  return PW/5;
  
 }
  
@@ -547,12 +563,15 @@ unsigned long getGreenPW() {
   digitalWrite(S3,HIGH);
   //PORTB = 0b00110100;
   // Define integer to represent Pulse Width
-  unsigned long PW;
+  unsigned long PW = 0;
   // Read the output Pulse Width
-  PW = pulseIn(sensorOut, LOW);
+  for (int i = 0; i < 5; i++){
+    PW += pulseIn(sensorOut, LOW);
+    delay(20);
+  }
+  
   // Return the value
-  return PW;
- 
+  return PW/5;
 }
  
 // Function to read Blue Pulse Widths
@@ -563,31 +582,39 @@ unsigned long getBluePW() {
   digitalWrite(S3,HIGH);
   //PORTB = 0b00100100;
   // Define integer to represent Pulse Width
-  unsigned long PW;
+  unsigned long PW = 0;
   // Read the output Pulse Width
-  PW = pulseIn(sensorOut, LOW);
+  for (int i = 0; i < 5; i++){
+    PW += pulseIn(sensorOut, LOW);
+    delay(20);
+  }
+  
   // Return the value
-  return PW;
+  return PW/5;
 }
 
-void identifyColour(int Red, int Green, int Blue) 
+char identifyColour(float Red, float Green, float Blue) 
 { 
-  if (Red < 70 && Blue < 80 && Green < 90) //see what values it gives, not sure about this 
+  if (Red > 0.95 && Red < 1.05 && Green > 0.95 && Green < 1.05 && Blue < 0.85) //see what values it gives, not sure about this 
   { 
-    dbprintf("White\n"); 
-  } else if(Red > 50){ 
-    if(Red > 80 && Green < 190){ 
-      dbprintf("Green\n");
-    } 
-    else if(Red <70)  
-    { 
-      dbprintf("Red\n"); 
-    } else {
-      dbprintf("Unknown\n");
-    }
-  } else { 
-    dbprintf("Unknown\n");
+    dbprintf("White\n");
+    return 'W'; 
   } 
+  if(Red > 0.95 && Red < 1.05 && Green > 1.95 && Green < 2.05 && Blue > 1.45)
+  {
+    dbprintf("Red\n");
+    return 'R';
+  }
+  if(Red > 0.95 && Red < 1.05 && Green > 0.65 && Green < 0.85 && Blue > 0.65 && Blue < 0.85)
+  {
+    dbprintf("Green\n");
+    return 'G';
+  } 
+  if(Green > 0.65 && Green < 0.75 && Blue > 0.45 && Blue < 0.65)
+  {
+    dbprintf("WALL\n");
+    return 'U';
+    }
 } 
 
 void readColour() {
@@ -624,7 +651,7 @@ void readColour() {
   // Serial.print(blue); 
    
   // Print output to Serial Monitor 
-  identifyColour(red, green, blue); 
+  colour = identifyColour((float)red/(float)red, (float)green/(float)red, (float)blue/(float)red); 
   delay(500);
 } 
 
@@ -646,6 +673,16 @@ float getDistance() {
   return cms;
 }
 
+float getBackDistance() {
+  digitalWrite(BACK_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(BACK_TRIG, LOW);
+  unsigned long microsecs = pulseIn(BACK_ECHO, HIGH, 3000);
+  float cms = microsecs * SPEED_OF_SOUND/2;
+  //dbprintf("Distance: %d\n", cms);
+  return cms;
+}
+
 void setup() {
   // put your setup code here, to run once:
   alexDiagonal = sqrt((ALEX_LENGTH * ALEX_LENGTH) + (ALEX_BREADTH * ALEX_BREADTH));
@@ -656,6 +693,7 @@ void setup() {
   setupEINT();
   setupSerial();
   startSerial();
+  //setupGyro();
   enablePullups();
   initializeState();
   setupCSensor();
@@ -714,19 +752,20 @@ void loop() {
   { 
    double wallDist = getDistance();
    dbprintf("Distance: %d\n", (int)wallDist);
-   if(forwardDist > newDist || (wallDist != 0 && wallDist <= 10)) 
+   if(forwardDist > newDist || (wallDist != 0 && wallDist <= 12)) 
    { 
-    
     deltaDist=0; 
     newDist=0;
     stop(); 
    } 
   } 
   else 
-   if(dir == BACKWARD) 
+   if(dir == BACKWARD)
    { 
-    if(reverseDist > newDist) 
-    { 
+    //double wallDist = getBackDistance();
+    if(reverseDist > newDist/* || (wallDist != 0 && wallDist <= 12)*/) 
+    {
+     //dbprintf("Distance: %d\n", (int)wallDist); 
      deltaDist=0; 
      newDist=0; 
      stop(); 
@@ -744,15 +783,19 @@ void loop() {
 
  if (deltaTicks > 0){
   if (dir == LEFT){
-    if (rightForwardTicksTurns >= targetTicks){
+    float angle = check_angle();
+    dbprintf("%d\n",(int)angle);
+    if (angle >= targetAng){
       deltaTicks = 0;
-      targetTicks = 0;
+      //targetTicks = 0;
       stop();
     }
   } else if (dir == RIGHT){
-    if (rightReverseTicksTurns >= targetTicks){
+    float angle = check_angle();
+    dbprintf("%d\n",(int)angle);
+    if (angle <= targetAng){
       deltaTicks = 0;
-      targetTicks = 0;
+      //targetTicks = 0;
       stop();
     }
   } else if (dir == STOP){
