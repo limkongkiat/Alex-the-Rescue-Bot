@@ -1,3 +1,5 @@
+//g++ tls-alex-server.cpp make_tls_server.cpp tls_server_lib.cpp tls_pthread.cpp tls_common_lib.cpp serial.cpp serialize.cpp -pthread -lssl -lcrypto -lasound -o tls-alex-server
+
 #include "make_tls_server.h"
 #include "tls_common_lib.h"
 #include "netconstants.h"
@@ -73,10 +75,13 @@ void handleStatus(TPacket *packet)
 	//for (auto i: packet->params) {printf("%ld,",i);}
 	printf("UART STATUS PACKET\n");
 	data[0] = NET_STATUS_PACKET;
-	// printf("red: %d\n", packet->params[10]);
-	// if (packet->params[10] < 200) {
-	// 	playAudio("autobots-3.pcm");
-	// }
+	if ((char)packet->params[13] == 'R') {
+		playAudio("red.pcm", 44200);
+	} else if ((char)packet->params[13] == 'G') {
+		playAudio("green.pcm", 44200);
+	} else if ((char)packet->params[13] == 'W') {
+		playAudio("white.pcm", 44200);
+	}
 	memcpy(&data[1], packet->params, sizeof(packet->params));
 	//for (auto i: data) {printf("%d,",i);}
 	sendNetworkData(data, sizeof(data));
@@ -237,7 +242,7 @@ void handleCommand(void *conn, const char *buffer)
 	{
 		case 'f':
 		case 'F':
-			playAudio("autobots-3.pcm");
+			//playAudio("rollout.pcm",16000);
 			commandPacket.command = COMMAND_FORWARD;
 			uartSendPacket(&commandPacket);
 			break;
@@ -283,6 +288,10 @@ void handleCommand(void *conn, const char *buffer)
 		case 'X':
 			commandPacket.command = COMMAND_COLOR_SENSOR;
 			uartSendPacket(&commandPacket);
+			break;
+		case 'a':
+		case 'A':
+			playAudio("autobots-3.pcm", 16000);
 			break;
 
 		default:
