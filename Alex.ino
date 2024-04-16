@@ -42,6 +42,7 @@ volatile unsigned long leftForwardTicks;
 volatile unsigned long leftReverseTicks;
 volatile unsigned long rightForwardTicks;
 volatile unsigned long rightReverseTicks;
+volatile unsigned long failsafe;
 
 volatile unsigned long leftForwardTicksTurns; 
 volatile unsigned long leftReverseTicksTurns;
@@ -68,6 +69,7 @@ unsigned long red = 0;
 unsigned long green = 0;
 unsigned long blue = 0;
 char colour = 'U';
+float wallDist = 0;
 
 // Ultrasound Pins
 int TRIG_PIN = 50;
@@ -177,6 +179,20 @@ void dbprintf(char *format, ...){
   sendMessage(buffer);
 }
 
+void dbprint(char *format, ...){
+  va_list args;
+  char buffer [128];
+
+  va_start(args,format);
+  vsprintf(buffer,format,args);
+  TPacket messagePacket;
+  char message[128];
+  messagePacket.packetType=PACKET_TYPE_MESSAGE;
+  strncpy(messagePacket.data, message, MAX_STR_LEN);
+  //sendResponse(&messagePacket);
+  //sendMessage(buffer);
+}
+
 void sendBadPacket()
 {
   // Tell the Pi that it sent us a packet with a bad
@@ -256,10 +272,8 @@ void leftISR()
 {
   if (dir == FORWARD){
     leftForwardTicks++; 
-    forwardDist = (unsigned long) ((float) rightForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
   } else if (dir == BACKWARD){
-    leftReverseTicks++;
-    reverseDist = (unsigned long) ((float) rightReverseTicks / COUNTS_PER_REV * WHEEL_CIRC);
+    leftReverseTicks++;    
   } else if (dir == LEFT){
     leftReverseTicksTurns++;
   } else if (dir == RIGHT){
@@ -271,8 +285,11 @@ void rightISR()
 {
   if (dir == FORWARD){
     rightForwardTicks++;
+    forwardDist = (unsigned long) ((float) rightForwardTicks / COUNTS_PER_REV * WHEEL_CIRC);
+    failsafe = millis();
   } else if (dir == BACKWARD){
     rightReverseTicks++;
+    reverseDist = (unsigned long) ((float) rightReverseTicks / COUNTS_PER_REV * WHEEL_CIRC);
   } else if (dir == LEFT){
     rightForwardTicksTurns++;
   } else if (dir == RIGHT){
@@ -442,6 +459,7 @@ void handleCommand(TPacket *command)
     // For movement commands, param[0] = distance, param[1] = speed.
     case COMMAND_FORWARD:
         sendOK();
+        failsafe = millis();
         forward((double) command->params[0], (float) command->params[1]);
       break;
 
@@ -532,7 +550,7 @@ void setupCSensor() {
   
   // Set Pulse Width scaling to 20%
   digitalWrite(S0,HIGH);
-  digitalWrite(S1,LOW);
+  digitalWrite(S1,HIGH);
 }
  
 // Function to read Red Pulse Widths
@@ -595,26 +613,27 @@ unsigned long getBluePW() {
 
 char identifyColour(float Red, float Green, float Blue) 
 { 
-  if (Red > 0.95 && Red < 1.05 && Green > 0.95 && Green < 1.05 && Blue < 0.85) //see what values it gives, not sure about this 
+  if (Green > 0.90 && Green < 1.10) //Red > 0.95 && Red < 1.05 && Green > 0.95 && Green < 1.05 && Blue < 0.85 
   { 
     dbprintf("White\n");
     return 'W'; 
   } 
-  if(Red > 0.95 && Red < 1.05 && Green > 1.95 && Green < 2.05 && Blue > 1.45)
+  if(Green > 1.25) //Red > 0.95 && Red < 1.05 && Green > 1.95 && Green < 2.05 && Blue > 1.45
   {
     dbprintf("Red\n");
     return 'R';
   }
-  if(Red > 0.95 && Red < 1.05 && Green > 0.65 && Green < 0.85 && Blue > 0.65 && Blue < 0.85)
+  if(Green > 0.6 && Green < 0.9)//Red > 0.95 && Red < 1.05 && Green > 0.65 && Green < 0.85 && Blue > 0.65 && Blue < 0.85
   {
     dbprintf("Green\n");
     return 'G';
   } 
-  if(Green > 0.65 && Green < 0.75 && Blue > 0.45 && Blue < 0.65)
+  if(Blue < 0.70) //Green > 0.65 && Green < 0.75 && Blue > 0.45 && Blue < 0.65
   {
     dbprintf("WALL\n");
     return 'U';
-    }
+  }
+  return '?';
 } 
 
 void readColour() {
@@ -663,25 +682,26 @@ void setupUltra() {
   digitalWrite(TRIG_PIN, LOW);
 }
 
-float getDistance() {
+void getDistance() {
   digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN , LOW);
   unsigned long microsecs = pulseIn(ECHO_PIN, HIGH, 3000);
-  float cms = microsecs * SPEED_OF_SOUND/2;
+  wallDist = microsecs * SPEED_OF_SOUND / 2;
+  //double cms = (double)microsecs * SPEED_OF_SOUND/2;
   //dbprintf("Distance: %d\n", cms);
-  return cms;
+  //return cms;
 }
 
-float getBackDistance() {
-  digitalWrite(BACK_TRIG, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(BACK_TRIG, LOW);
-  unsigned long microsecs = pulseIn(BACK_ECHO, HIGH, 3000);
-  float cms = microsecs * SPEED_OF_SOUND/2;
-  //dbprintf("Distance: %d\n", cms);
-  return cms;
-}
+//float getBackDistance() {
+//  digitalWrite(BACK_TRIG, HIGH);
+//  delayMicroseconds(10);
+//  digitalWrite(BACK_TRIG, LOW);
+//  unsigned long microsecs = pulseIn(BACK_ECHO, HIGH, 3000);
+//  float cms = microsecs * SPEED_OF_SOUND/2;
+//  //dbprintf("Distance: %d\n", cms);
+//  return cms;
+//}
 
 void setup() {
   // put your setup code here, to run once:
@@ -750,11 +770,13 @@ void loop() {
  { 
   if(dir==FORWARD) 
   { 
-   double wallDist = getDistance();
+   getDistance();
    dbprintf("Distance: %d\n", (int)wallDist);
-   if(forwardDist > newDist || (wallDist != 0 && wallDist <= 12)) 
+   //printf("Distance: %d\n", (int)wallDist);
+   if(forwardDist > newDist || (wallDist != 0 && wallDist <= 13) || millis() - failsafe > 1000) 
    { 
-    deltaDist=0; 
+    dbprintf("Distance: %d\n", (int)wallDist);
+    deltaDist=0;
     newDist=0;
     stop(); 
    } 
@@ -769,7 +791,7 @@ void loop() {
      deltaDist=0; 
      newDist=0; 
      stop(); 
-    } 
+    }
    } 
    else 
     
@@ -784,7 +806,7 @@ void loop() {
  if (deltaTicks > 0){
   if (dir == LEFT){
     float angle = check_angle();
-    dbprintf("%d\n",(int)angle);
+    //dbprintf("%d\n",(int)angle);
     if (angle >= targetAng){
       deltaTicks = 0;
       //targetTicks = 0;
@@ -792,7 +814,7 @@ void loop() {
     }
   } else if (dir == RIGHT){
     float angle = check_angle();
-    dbprintf("%d\n",(int)angle);
+    //dbprintf("%d\n",(int)angle);
     if (angle <= targetAng){
       deltaTicks = 0;
       //targetTicks = 0;
