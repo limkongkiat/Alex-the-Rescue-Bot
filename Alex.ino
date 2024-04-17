@@ -69,13 +69,14 @@ unsigned long red = 0;
 unsigned long green = 0;
 unsigned long blue = 0;
 char colour = 'U';
-float wallDist = 0;
+//float wallDist = 0;
+//int stopDist = 13;
 
 // Ultrasound Pins
 int TRIG_PIN = 50;
-int BACK_TRIG = 51;
+//int BACK_TRIG = 51;
 int ECHO_PIN = 48;
-int BACK_ECHO = 49;
+//int BACK_ECHO = 49;
 float SPEED_OF_SOUND = 0.0345;
 
 unsigned long computeDeltaTicks (float ang){
@@ -88,8 +89,8 @@ void left(float ang, float speed){
   /*if (ang == 0){
     deltaTicks = 99999999;
   } else {*/
-    currAng = check_angle();
-    targetAng = currAng + ang;
+    //currAng = check_angle();
+    targetAng = check_angle() + ang;
   //}
     //deltaTicks = computeDeltaTicks(ang);
 
@@ -102,8 +103,8 @@ void right(float ang, float speed){
   /*if (ang == 0){
     deltaTicks = 99999999;
   } else {*/
-    currAng = check_angle();
-    targetAng = currAng - ang;
+    //currAng = check_angle();
+    targetAng = check_angle() - ang;
   //}
   //targetTicks = rightReverseTicksTurns + deltaTicks;
   //dbprintf("%d\n",targetTicks);
@@ -495,6 +496,15 @@ void handleCommand(TPacket *command)
         readColour();
         sendStatus();
       break;
+//    case COMMAND_TOGGLE_ULTRA:
+//        sendOK();
+//        if (stopDist == 13) {
+//          stopDist = 10;
+//        } else {
+//          stopDist = 13;
+//        }
+//        dbprintf("Stop dist now: %d\n", stopDist);
+//      break;
     default:
       sendBadCommand();
   }
@@ -682,15 +692,15 @@ void setupUltra() {
   digitalWrite(TRIG_PIN, LOW);
 }
 
-void getDistance() {
+float getDistance() {
   digitalWrite(TRIG_PIN, HIGH);
   delayMicroseconds(10);
   digitalWrite(TRIG_PIN , LOW);
   unsigned long microsecs = pulseIn(ECHO_PIN, HIGH, 3000);
-  wallDist = microsecs * SPEED_OF_SOUND / 2;
-  //double cms = (double)microsecs * SPEED_OF_SOUND/2;
+  //wallDist = microsecs * SPEED_OF_SOUND / 2;
+  float cms = (float)microsecs * SPEED_OF_SOUND/2;
   //dbprintf("Distance: %d\n", cms);
-  //return cms;
+  return cms;
 }
 
 //float getBackDistance() {
@@ -705,6 +715,7 @@ void getDistance() {
 
 void setup() {
   // put your setup code here, to run once:
+  //setupGyro();
   alexDiagonal = sqrt((ALEX_LENGTH * ALEX_LENGTH) + (ALEX_BREADTH * ALEX_BREADTH));
 
   alexCirc = PI * alexDiagonal;
@@ -713,7 +724,6 @@ void setup() {
   setupEINT();
   setupSerial();
   startSerial();
-  //setupGyro();
   enablePullups();
   initializeState();
   setupCSensor();
@@ -770,8 +780,9 @@ void loop() {
  { 
   if(dir==FORWARD) 
   { 
-   getDistance();
-   dbprintf("Distance: %d\n", (int)wallDist);
+   float wallDist = getDistance();
+   delay(1);
+   //dbprintf("Distance: %d\n", (int)wallDist);
    //printf("Distance: %d\n", (int)wallDist);
    if(forwardDist > newDist || (wallDist != 0 && wallDist <= 13) || millis() - failsafe > 1000) 
    { 
@@ -825,5 +836,5 @@ void loop() {
       targetTicks = 0;
       stop();
   }
- }       
+ }      
 }
