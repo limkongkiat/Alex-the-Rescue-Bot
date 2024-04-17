@@ -623,7 +623,7 @@ unsigned long getBluePW() {
 
 char identifyColour(float Red, float Green, float Blue) 
 { 
-  if (Green > 0.90 && Green < 1.10) //Red > 0.95 && Red < 1.05 && Green > 0.95 && Green < 1.05 && Blue < 0.85 
+  if (Green > 0.95 && Green < 1.10) //Red > 0.95 && Red < 1.05 && Green > 0.95 && Green < 1.05 && Blue < 0.85 
   { 
     dbprintf("White\n");
     return 'W'; 
@@ -633,7 +633,7 @@ char identifyColour(float Red, float Green, float Blue)
     dbprintf("Red\n");
     return 'R';
   }
-  if(Green > 0.6 && Green < 0.9)//Red > 0.95 && Red < 1.05 && Green > 0.65 && Green < 0.85 && Blue > 0.65 && Blue < 0.85
+  if(Green > 0.6 && Green <= 0.95)//Red > 0.95 && Red < 1.05 && Green > 0.65 && Green < 0.85 && Blue > 0.65 && Blue < 0.85
   {
     dbprintf("Green\n");
     return 'G';
