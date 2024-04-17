@@ -289,9 +289,14 @@ void handleCommand(void *conn, const char *buffer)
 			commandPacket.command = COMMAND_COLOR_SENSOR;
 			uartSendPacket(&commandPacket);
 			break;
+		case 't':
+		case 'T':
+			commandPacket.command = COMMAND_TOGGLE_ULTRA;
+			uartSendPacket(&commandPacket);
+			break;			
 		case 'a':
 		case 'A':
-			playAudio("autobots-3.pcm", 16000);
+			playAudio("alex_celeb.pcm", 44100);
 			break;
 
 		default:
