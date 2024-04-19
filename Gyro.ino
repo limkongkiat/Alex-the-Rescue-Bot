@@ -63,8 +63,8 @@ float check_angle() { // returns the current orientation of the bot in degrees
   return (yaw);
 }
 
-void setupGyro() {
-  //Serial.begin(9600);
+void setup() {
+  Serial.begin(9600);
   Wire.begin();                      // Initialize comunication
   Wire.beginTransmission(MPU);       // Start communication with MPU6050 // MPU=0x68
   Wire.write(0x6B);                  // Talk to the register 6B
@@ -76,7 +76,7 @@ void setupGyro() {
   Wire.requestFrom(MPU, 6, true); // Read 6 registers total, each axis value is stored in 2 registers
   calibration(); // calculates drift rate of gyro
 }
-/*
+
 void loop(){
   Serial.println(check_angle());
-}*/
+}
