@@ -484,6 +484,7 @@ void handleCommand(TPacket *command)
         stop();
       break;        
     case COMMAND_GET_STATS:
+        sendOK();
         clearColorCounters();
         sendStatus();
       break;
