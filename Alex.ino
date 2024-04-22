@@ -26,11 +26,12 @@ float alexDiagonal = 0.0;
 float alexCirc = 0.0;
 
 //Colour Sensor
-#define S0 22
-#define S1 23
-#define S2 24
-#define S3 25
-#define sensorOut A8
+//Port B 
+#define S0 22 //Port B 3
+#define S1 23 //4
+#define S2 24 //5
+#define S3 25 //6
+#define sensorOut A8 //port K 0
 
 /*
  *    Alex's State Variables
