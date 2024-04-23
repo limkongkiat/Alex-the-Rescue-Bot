@@ -85,9 +85,9 @@ volatile unsigned int rxHead;
 volatile unsigned int rxTail;
 volatile unsigned int bytesRecvd;
 
-char txBuffer[256] = {0};
-volatile unsigned int txHead;
-volatile unsigned int txTail;
+//char txBuffer[256] = {0};
+//volatile unsigned int txHead;
+//volatile unsigned int txTail;
 //volatile unsigned int txBytes;
 
 unsigned long computeDeltaTicks (float ang){
@@ -326,68 +326,42 @@ ISR(INT3_vect){
  * Setup and start codes for serial communications
  * 
  */
-// Set up the serial connection. For now we are using 
-// Arduino Wiring, you will replace this later
-// with bare-metal code.
+
 void setupSerial()
 {
-  // To replace later with bare-metal.
   UCSR0A = 0;
   UCSR0C = 0b00000110;
   UBRR0L = 103;
   UBRR0H = 0;
-  
 }
-
-// Start the serial connection. For now we are using
-// Arduino wiring and this function is empty. We will
-// replace this later with bare-metal code.
 
 void startSerial()
 {
-  UCSR0B = 0b10011000;
+  UCSR0B = 0b00011000;
 }
 
 // Read the serial port. Returns the read character in
 // ch if available. Also returns TRUE if ch is valid. 
 // This will be replaced later with bare-metal code.
-
-ISR(USART0_RX_vect) {
-  rxBuffer[rxTail] = UDR0;
-  rxTail = (rxTail + 1) % 256;
-}
-
 int readSerial(char *buffer)
 {
-  bytesRecvd = 0;
-  while (rxHead != rxTail){
-    buffer[bytesRecvd] = rxBuffer[rxHead];
-    rxHead = (rxHead + 1) % 256;
-    bytesRecvd++;
+  int count=0;
+  while (UCSR0A & (1 << 7)){
+    buffer[count++] = UDR0;
   }
-  return bytesRecvd;
+  return count;
 }
 
 // Write to the serial port. Replaced later with
 // bare-metal code
-ISR(USART0_UDRE_vect) {
-  if (txHead != txTail) {
-    UDR0 = txBuffer[txHead];
-    txHead = (txHead + 1) % 256;
-  } else {
-    UCSR0B &= 0b11011111;
-  }
-}
-
 
 void writeSerial(const char *buffer, int len)
 {
-  //Serial.write(buffer, len);
-  for (int curr = 0; curr < len; curr++) {
-    txBuffer[txTail] = buffer[curr];
-    txTail = (txTail + 1) % 256;
+  for (int i=0;i<len;i++){
+    while (!(UCSR0A & 0b00100000));
+    UDR0 = buffer[i];
   }
-  UCSR0B |= 0b00100000;
+  //Serial.write(buffer, len);
   // Change Serial to Serial2/Serial3/Serial4 in later labs when using other UARTs
 }
 
