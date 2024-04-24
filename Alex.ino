@@ -552,26 +552,23 @@ void waitForHello()
 void setupCSensor() {
  
   // Set S0 - S3 as outputs
-  pinMode(S0, OUTPUT);
-  pinMode(S1, OUTPUT);
-  pinMode(S2, OUTPUT);
-  pinMode(S3, OUTPUT);
+  DDRB |= PIN3|PIN4|PIN5|PIN6;
   
   // Set Sensor output as input
-  pinMode(sensorOut, INPUT);
+  DDRK &= ~(0b00000001);
   
-  // Set Pulse Width scaling to 20%
-  digitalWrite(S0,HIGH);
-  digitalWrite(S1,HIGH);
+  // Set Pulse Width scaling to 100%
+  PORTB |= PIN3|PIN4;
+  
+  // Setup Serial Monitor
+  Serial.begin(9600);
 }
  
 // Function to read Red Pulse Widths
 unsigned long getRedPW() {
  
   // Set sensor to read Red only
-  digitalWrite(S2,LOW);
-  digitalWrite(S3,LOW);
-  //PORTB = 0b00000100;
+  PORTB &= ~(PIN5|PIN6);
   // Define integer to represent Pulse Width
   unsigned long PW = 0;
   // Read the output Pulse Width
@@ -579,19 +576,15 @@ unsigned long getRedPW() {
     PW += pulseIn(sensorOut, LOW);
     delay(20);
   }
-  
   // Return the value
   return PW/5;
- 
 }
  
 // Function to read Green Pulse Widths
 unsigned long getGreenPW() {
  
   // Set sensor to read Green only
-  digitalWrite(S2,HIGH);
-  digitalWrite(S3,HIGH);
-  //PORTB = 0b00110100;
+  PORTB |= (PIN5|PIN6);
   // Define integer to represent Pulse Width
   unsigned long PW = 0;
   // Read the output Pulse Width
@@ -599,7 +592,6 @@ unsigned long getGreenPW() {
     PW += pulseIn(sensorOut, LOW);
     delay(20);
   }
-  
   // Return the value
   return PW/5;
 }
@@ -608,9 +600,8 @@ unsigned long getGreenPW() {
 unsigned long getBluePW() {
  
   // Set sensor to read Blue only
-  digitalWrite(S2,LOW);
-  digitalWrite(S3,HIGH);
-  //PORTB = 0b00100100;
+  PORTB &= ~PIN5;
+  PORTB |= PIN6;
   // Define integer to represent Pulse Width
   unsigned long PW = 0;
   // Read the output Pulse Width
@@ -618,7 +609,6 @@ unsigned long getBluePW() {
     PW += pulseIn(sensorOut, LOW);
     delay(20);
   }
-  
   // Return the value
   return PW/5;
 }
@@ -648,39 +638,26 @@ char identifyColour(float Red, float Green, float Blue)
   return '?';
 } 
 
-void readColour() {
- digitalWrite(S2,HIGH); 
- digitalWrite(S3,LOW); 
- //white = (double)pulseIn(sensorOut,LOW); 
- delay(20); 
-  
+void readColour() {  
   // Read Red Pulse Width 
-  digitalWrite(S2,LOW); 
-  digitalWrite(S3,LOW); 
+  PORTB &= ~(PIN5|PIN6);
   red = (double)pulseIn(sensorOut,LOW); 
   // Delay to stabilize sensor 
   delay(20); 
    
   // Read Green Pulse Width 
-  digitalWrite(S2,HIGH); 
-  digitalWrite(S3,HIGH); 
+  PORTB |= (PIN5|PIN6); 
   green = (double)pulseIn(sensorOut,LOW); 
   // Delay to stabilize sensor 
   delay(20); 
    
   // Read Blue Pulse Width 
-  digitalWrite(S2,LOW); 
-  digitalWrite(S3,HIGH); 
+  PORTB &= ~PIN5;
+  PORTB |= PIN6;
   blue = (double)pulseIn(sensorOut,LOW); 
   // Delay to stabilize sensor 
   delay(20); 
- 
-  // Serial.print(red); 
-  // Serial.print(" "); 
-  // Serial.print(green); 
-  // Serial.print(" "); 
-  // Serial.print(blue); 
-   
+  
   // Print output to Serial Monitor 
   colour = identifyColour((float)red/(float)red, (float)green/(float)red, (float)blue/(float)red); 
   delay(500);
@@ -689,31 +666,21 @@ void readColour() {
 
 
 void setupUltra() {
-  pinMode(TRIG_PIN, OUTPUT);
-  pinMode(ECHO_PIN, INPUT);
-  digitalWrite(TRIG_PIN, LOW);
+  //output trig, input echo
+  DDRD |= PIN7;
+  DDRD &= ~PIN5;
+  //write low to Trig
+  PORTD &= ~PIN7;
 }
 
 float getDistance() {
-  digitalWrite(TRIG_PIN, HIGH);
+  PORTD |= PIN7; //Trig pin High
   delayMicroseconds(10);
-  digitalWrite(TRIG_PIN , LOW);
+  PORTD &= ~PIN7; //Trig LOW
   unsigned long microsecs = pulseIn(ECHO_PIN, HIGH, 3000);
-  //wallDist = microsecs * SPEED_OF_SOUND / 2;
   float cms = (float)microsecs * SPEED_OF_SOUND/2;
-  //dbprintf("Distance: %d\n", cms);
   return cms;
 }
-
-//float getBackDistance() {
-//  digitalWrite(BACK_TRIG, HIGH);
-//  delayMicroseconds(10);
-//  digitalWrite(BACK_TRIG, LOW);
-//  unsigned long microsecs = pulseIn(BACK_ECHO, HIGH, 3000);
-//  float cms = microsecs * SPEED_OF_SOUND/2;
-//  //dbprintf("Distance: %d\n", cms);
-//  return cms;
-//}
 
 void setup() {
   // put your setup code here, to run once:
