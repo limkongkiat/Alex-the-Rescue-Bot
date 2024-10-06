@@ -8,17 +8,17 @@ Obstacle Detection and Mapping: Utilizes Lidar for mapping surroundings and dete
 Remote Control: Controlled remotely via a laptop that sends commands to a Raspberry Pi, which communicates with an Arduino Mega.
 
 ## System Architecture
-Hardware Components:
+### Hardware Components:
 Motors, color sensor, Lidar, Raspberry Pi, Arduino Mega, ultrasonic sensor, gyroscope, and power supply.
 Custom 3D-printed holder to optimize sensor placement.
 Heat sinks used to manage heat from the Raspberry Pi during extended operations.
 
-## Key Sensors:
+### Key Sensors:
 MPU-6050 Gyroscope: To detect motion and adjust the robot's orientation accurately.
 HC-SR04 Ultrasonic Sensor: Measures the distance to obstacles and prevents collisions.
 Lidar System: Maps the environment using Hector SLAM for visualization.
 
-## Software Components:
+### Software Components:
 Arduino Mega: Controls movement, receives commands, and processes sensor data.
 Raspberry Pi (RPi): Acts as the intermediary between the laptop and Arduino, processing Lidar data and relaying commands.
 Laptop Interface: Commands are sent from the laptop to navigate the robot, and Lidar visualization is displayed via VNC Viewer.
