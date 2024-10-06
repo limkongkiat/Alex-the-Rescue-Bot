@@ -9,9 +9,9 @@ Remote Control: Controlled remotely via a laptop that sends commands to a Raspbe
 
 ## System Architecture
 ### Hardware Components:
-Motors, color sensor, Lidar, Raspberry Pi, Arduino Mega, ultrasonic sensor, gyroscope, and power supply.
-Custom 3D-printed holder to optimize sensor placement.
-Heat sinks used to manage heat from the Raspberry Pi during extended operations.
+- Motors, color sensor, Lidar, Raspberry Pi, Arduino Mega, ultrasonic sensor, gyroscope, and power supply.
+- Custom 3D-printed holder to optimize sensor placement.
+- Heat sinks used to manage heat from the Raspberry Pi during extended operations.
 
 ### Key Sensors:
 MPU-6050 Gyroscope: To detect motion and adjust the robot's orientation accurately.
